@@ -607,7 +607,7 @@ class SDDP2013:
                     pass
                 elif p._9q >= 7:
                     p.event(Event.TEST_8Q) # General Policy to exclude 8Q data results from analysis.
-                    Kongsuk.PC.followup_9Q(p) # This is silly, but it is in the flowchart diagram.
+                    Kongsuk.PC.followup_9Q(p) # Note: This is in the flowchart diagram.
                     p.event(Event.REFER_TO_SC)
                     p.travel(Event.TRAVEL, CareLevel.SC)
                     SDDP2013.SC.receive_referral(p)
@@ -635,9 +635,9 @@ class SDDP2013:
                         else:
                             p.event(Event.TREATMENT_ED)
                     else: # is MDD:
-                        p.event(Event.TEST_9Q) # This is silly, but it is in the flowchart diagram.
+                        p.event(Event.TEST_9Q) # Note: This is in the flowchart diagram.
                         WARNING.print_once(k='SC_REPEATED_9Q_TEST', t="""
-                            [!NOTE] SDDP 2013 will repeat the 9Q test twice in SC. It's silly,  but it is in the flowchart diagram.
+                            [!NOTE] SDDP 2013 will repeat the 9Q test twice in SC. It is in the flowchart diagram.
                             """)
                         if p._9q >= 7 and p._9q < 13: # Mild
                             p.event(Event.TREATMENT_CSG)
@@ -723,7 +723,7 @@ class SDDP2013_NonDup9Q:
                     pass
                 elif p._9q >= 7:
                     p.event(Event.TEST_8Q) # General Policy to exclude 8Q data results from analysis.
-                    Kongsuk.PC.followup_9Q(p) # This is silly, but it is in the flowchart diagram.
+                    Kongsuk.PC.followup_9Q(p) # Note: This is in the flowchart diagram.
                     p.event(Event.REFER_TO_SC)
                     p.travel(Event.TRAVEL, CareLevel.SC)
                     SDDP2013_NonDup9Q.SC.receive_referral(p)
@@ -751,9 +751,9 @@ class SDDP2013_NonDup9Q:
                         else:
                             p.event(Event.TREATMENT_ED)
                     else: # is MDD:
-                        # p.event(Event.TEST_9Q) # This is silly, but it is in the flowchart diagram.
+                        # p.event(Event.TEST_9Q) # Note: This is in the flowchart diagram.
                         # WARNING.print_once(k='SC_REPEATED_9Q_TEST', t="""
-                        #     [!NOTE] SDDP 2013 will repeat the 9Q test twice in SC. It's silly,  but it is in the flowchart diagram.
+                        #     [!NOTE] SDDP 2013 will repeat the 9Q test twice in SC. It is in the flowchart diagram.
                         #     """)
                         if p._9q >= 7 and p._9q < 13: # Mild
                             p.event(Event.TREATMENT_CSG)

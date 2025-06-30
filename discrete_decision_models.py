@@ -188,6 +188,81 @@ Event = Enum('Event', ['TRAVEL',
 class Events(IncCounter): pass
 class Travel(IncCounter): pass
 
+
+"""
+    ----------------------------------------------------------
+    --  Uncertainty Decision Transitions: (Fine, Mod, Coarse)
+    ----------------------------------------------------------
+"""
+
+class Decision:
+    def __init__(self, **kwargs) -> None:
+        for key, value in kwargs.items():
+            setattr(self, key, value)
+        self.decision_options = self._decision_options(self.boundaries)
+        
+    def _decision_options(self, boundaries):
+        n = len(boundaries)
+        l = [('0'*n) for i in range(n)]
+        for i in range(n):
+            l[i] = l[i][:i] + str(1) + l[i][i + 1:]
+        return {a:b for a,b in zip(l, list(range(n)))}
+
+    def _decision(self, score:int):
+        bit_decision = ''.join([str(int(f(score))) for f in self.boundaries])
+        action_level = self.decision_options[bit_decision]
+        return action_level
+
+    def response(self, score:int):
+        c = self._decision(score)
+        return self.actions[c]
+    
+UncertaintyAccuracy_9Q_Coarse_Inc = Decision( **{'boundaries': [lambda x: x>=0 and x<=6,
+                                                        lambda x: x>=7 and x<=12,
+                                                        lambda x: x>=13 and x<=18,
+                                                        lambda x: x>=19 and x<=27, # Sev-max
+                                                        ],
+                                            'actions': [7,13,19,None]
+                                            })
+UncertaintyAccuracy_9Q_Coarse_Dec = Decision( **{'boundaries': [lambda x: x>=0 and x<=6,
+                                                        lambda x: x>=7 and x<=12,
+                                                        lambda x: x>=13 and x<=18,
+                                                        lambda x: x>=19 and x<=27, # Sev-Max
+                                                        ],
+                                            'actions': [None,6,12,18]
+                                            })
+    
+UncertaintyAccuracy_9Q_Fine_Inc = Decision( **{'boundaries': [lambda x: x<=3,
+                                                        lambda x: x>3 and x<=6,
+                                                        lambda x: x>=7 and x<=12,
+                                                        lambda x: x>=13 and x<=18,
+                                                        lambda x: x>=19 and x<=21, # Sev-Mod
+                                                        lambda x: x>=22 and x<=27  # Sev-max
+                                                        ],
+                                            'actions': [None,7,13,19,None,None]
+                                            })
+UncertaintyAccuracy_9Q_Fine_Dec = Decision( **{'boundaries': [lambda x: x<=3,
+                                                        lambda x: x>3 and x<=6,
+                                                        lambda x: x>=7 and x<=12,
+                                                        lambda x: x>=13 and x<=18,
+                                                        lambda x: x>=19 and x<=21, # Sev-Mod
+                                                        lambda x: x>=22 and x<=27  # Sev-max
+                                                        ],
+                                            'actions': [None,None,6,12,18,None]
+                                            })
+UncertaintyAccuracy_9Q_Moderate = Decision( **{'boundaries': [lambda x: x<=3,           # Low-min
+                                                        lambda x: x>3 and x<=6,    # Low-Mild
+                                                        lambda x: x>=7 and x<=9,   # Mild-Low
+                                                        lambda x: x>=10 and x<=12, # Mild-Mod
+                                                        lambda x: x>=13 and x<=15, # Mod-Mild
+                                                        lambda x: x>=16 and x<=18, # Mod-Sev
+                                                        lambda x: x>=19 and x<=21, # Sev-Mod
+                                                        lambda x: x>=22 and x<=27  # Sev-max
+                                                        ],
+                                            'actions': [None,7,6,13,12,19,18,None]
+                                            })
+
+
 """
     ------------------------------------------------------
     --  Patient Model:

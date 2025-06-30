@@ -194,16 +194,27 @@ class Travel(IncCounter): pass
     ------------------------------------------------------
 """
 
+
 class Patient(DO):
-    def __init__(self, events:Events, travel:Travel, hosp:HospitalLookup=None, kwargs:dict={}):
+    def __init__(self, config, events:Events, travel:Travel, hosp:HospitalLookup=None, kwargs:dict={}):
         super().__init__(kwargs)
         self.__events = events
         self.__travel = travel
         self.__hosp = hosp
-        self._is_SDDPReferToPC_vs_SC = self.__rand_50perc()
-        self._is_FollowupPC_vs_HV = self.__rand_50perc()
-        self._is_PsySocial = self.__rand_50perc()
-        self._is_EarlyFollowUpDropout = self.__rand_50perc()
+        self._MDD_PERC = config._mdd #0.694
+        self._is_PsySocial = self.__rand_perc(config._psy)
+        self._is_SDDPReferToPC_vs_SC = self.__rand_perc(config._rpsc)
+        self._is_FollowupPC_vs_HV = self.__rand_perc(config._fhv)
+        self._is_VisitPC_vs_HV = self._is_FollowupPC_vs_HV
+        self._is_EarlyFollowUpDropout_PC = self.__rand_perc(config._fpc)
+        self._is_EarlyFollowUpDropout_SC = self.__rand_perc(config._fsc)
+        if config._uacc>0 and config._uacch>0:
+            raise Exception('Paramters `uacc` and `uacch` are both defined (>0); use only 1 at a time.')
+        elif config._uacc>0:
+            self._9q = self._rating_moderate_uncertainty_9q( config._uacc )
+        elif config._uacch>0:
+            self._9q = self._rating_coarse_uncertainty_9q( config._uacch )
+            # self._9q = self._rating_fine_uncertainty_9q( config._uacch )
         self._selected_hospital = {k:None for k in CareLevel._member_names_}
         self._is_MDD = None
     def event(self, k):
@@ -215,25 +226,31 @@ class Patient(DO):
         self.__travel[_event.name] += self.bayesian_hospital_km(careLevel)
     def is_MDD(self):
         if self._is_MDD is None:
-            MDD_percentage_of_9Q_GTEQ_7 = 0.694
+            MDD_percentage_of_9Q_GTEQ_7 = self._MDD_PERC
             is_mdd = False
             if self._9q >= 7:
                 is_mdd = random.random() <= MDD_percentage_of_9Q_GTEQ_7 
                 # 0 to 0.694 is MDD. 0.694 to 1.0 is not MDD.
             self._is_MDD = is_mdd
         return self._is_MDD
-    def __rand_50perc(self):
+    def __rand_perc(self,p:float):
         # return random.randint(0,1)
-        # return random.uniform(0,1) >= 0.5
-        return random.random() >= 0.5 # Fastest. Empirically Approx-Uniform.
+        # return random.uniform(0,1) >= p
+        return random.random() <= p # Fastest. Empirically Approx-Uniform.
+    def __rand_50perc(self):
+        return self.__rand_perc(0.5)
     def is_SDDPReferToPC_vs_SC(self):
         return self._is_SDDPReferToPC_vs_SC
+    def is_VisitPC_vs_HV(self):
+        return self._is_VisitPC_vs_HV
     def is_FollowupPC_vs_HV(self):
         return self._is_FollowupPC_vs_HV
     def is_PsySocial(self):
         return self._is_PsySocial
-    def is_EarlyFollowUpDropout(self):
-        return self._is_EarlyFollowUpDropout
+    def is_EarlyFollowUpDropout_PC(self):
+        return self._is_EarlyFollowUpDropout_PC
+    def is_EarlyFollowUpDropout_SC(self):
+        return self._is_EarlyFollowUpDropout_SC
     def bayesian_hospital(self, careLevel:Enum):
         if self._selected_hospital[careLevel.name] is None:
             hosp_id = getattr(self, f'_nearby_{careLevel.name.lower()}_id')
@@ -245,6 +262,30 @@ class Patient(DO):
         return self._selected_hospital[careLevel.name]
     def bayesian_hospital_km(self, careLevel:Enum):
         return self.bayesian_hospital(careLevel)['km'].iloc[0]
+    def _rating_moderate_uncertainty_9q(self, uacc:float):
+        global UncertaintyAccuracy_9Q_Moderate
+        r = self._9q
+        if self.__rand_perc(uacc): #is_9q_uncertain_accuracy -> Make a change or not.
+            r = UncertaintyAccuracy_9Q_Moderate.response( self._9q ) or self._9q  #inc, dec or no-change rating (retained as score value)
+        return r
+    def _rating_fine_uncertainty_9q(self, uacc:float):
+            global UncertaintyAccuracy_9Q_Fine_Inc,UncertaintyAccuracy_9Q_Fine_Dec
+            r = self._9q
+            if self.__rand_perc(uacc): #is_9q_uncertain_accuracy -> Make a change or not.
+                if self.__rand_perc(.5):
+                    r = UncertaintyAccuracy_9Q_Fine_Inc.response( self._9q ) or self._9q  #inc, dec or no-change rating (retained as score value)
+                else:
+                    r = UncertaintyAccuracy_9Q_Fine_Dec.response( self._9q ) or self._9q  #inc, dec or no-change rating (retained as score value)
+            return r
+    def _rating_coarse_uncertainty_9q(self, uacc:float):
+            global UncertaintyAccuracy_9Q_Coarse_Inc,UncertaintyAccuracy_9Q_Coarse_Dec
+            r = self._9q
+            if self.__rand_perc(uacc): #is_9q_uncertain_accuracy -> Make a change or not.
+                if self.__rand_perc(.5):
+                    r = UncertaintyAccuracy_9Q_Coarse_Inc.response( self._9q ) or self._9q  #inc, dec or no-change rating (retained as score value)
+                else:
+                    r = UncertaintyAccuracy_9Q_Coarse_Dec.response( self._9q ) or self._9q  #inc, dec or no-change rating (retained as score value)
+            return r
 
 
 """
